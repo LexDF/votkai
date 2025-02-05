@@ -1,0 +1,330 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "private_outputs": true,
+      "provenance": [],
+      "toc_visible": true,
+      "authorship_tag": "ABX9TyN1zj5ltQaAejxuCuOTdrNs",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/LexDF/votkai/blob/main/CUFYA\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "iD1XOFkfwUtg"
+      },
+      "outputs": [],
+      "source": [
+        "!git clone https://gist.github.com/29ad9179f0b0aa585cbb056786dd3fd3.git\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "### setup ComfyUI ###\n",
+        "from pathlib import Path\n",
+        "\n",
+        "OPTIONS = {}\n",
+        "\n",
+        "USE_GOOGLE_DRIVE = True  #@param {type:\"boolean\"}\n",
+        "UPDATE_COMFY_UI = True  #@param {type:\"boolean\"}\n",
+        "USE_COMFYUI_MANAGER = True  #@param {type:\"boolean\"}\n",
+        "INSTALL_CUSTOM_NODES_DEPENDENCIES = True  #@param {type:\"boolean\"}\n",
+        "OPTIONS['USE_GOOGLE_DRIVE'] = USE_GOOGLE_DRIVE\n",
+        "OPTIONS['UPDATE_COMFY_UI'] = UPDATE_COMFY_UI\n",
+        "OPTIONS['USE_COMFYUI_MANAGER'] = USE_COMFYUI_MANAGER\n",
+        "OPTIONS['INSTALL_CUSTOM_NODES_DEPENDENCIES'] = INSTALL_CUSTOM_NODES_DEPENDENCIES\n",
+        "\n",
+        "current_dir = !pwd\n",
+        "WORKSPACE = f\"{current_dir[0]}/ComfyUI\"\n",
+        "\n",
+        "if OPTIONS['USE_GOOGLE_DRIVE']:\n",
+        "    !echo \"Mounting Google Drive...\"\n",
+        "    %cd /\n",
+        "\n",
+        "    from google.colab import drive\n",
+        "    drive.mount('/content/drive')\n",
+        "\n",
+        "    WORKSPACE = \"/content/drive/MyDrive/ComfyUI\"\n",
+        "    %cd /content/drive/MyDrive\n",
+        "\n",
+        "![ ! -d $WORKSPACE ] && echo -= Initial setup ComfyUI =- && git clone https://github.com/comfyanonymous/ComfyUI\n",
+        "%cd $WORKSPACE\n",
+        "\n",
+        "if OPTIONS['UPDATE_COMFY_UI']:\n",
+        "  !echo -= Updating ComfyUI =-\n",
+        "\n",
+        "  # Correction of the issue of permissions being deleted on Google Drive.\n",
+        "  ![ -f \".ci/nightly/update_windows/update_comfyui_and_python_dependencies.bat\" ] && chmod 755 .ci/nightly/update_windows/update_comfyui_and_python_dependencies.bat\n",
+        "  ![ -f \".ci/nightly/windows_base_files/run_nvidia_gpu.bat\" ] && chmod 755 .ci/nightly/windows_base_files/run_nvidia_gpu.bat\n",
+        "  ![ -f \".ci/update_windows/update_comfyui_and_python_dependencies.bat\" ] && chmod 755 .ci/update_windows/update_comfyui_and_python_dependencies.bat\n",
+        "  ![ -f \".ci/update_windows_cu118/update_comfyui_and_python_dependencies.bat\" ] && chmod 755 .ci/update_windows_cu118/update_comfyui_and_python_dependencies.bat\n",
+        "  ![ -f \".ci/update_windows/update.py\" ] && chmod 755 .ci/update_windows/update.py\n",
+        "  ![ -f \".ci/update_windows/update_comfyui.bat\" ] && chmod 755 .ci/update_windows/update_comfyui.bat\n",
+        "  ![ -f \".ci/update_windows/README_VERY_IMPORTANT.txt\" ] && chmod 755 .ci/update_windows/README_VERY_IMPORTANT.txt\n",
+        "  ![ -f \".ci/update_windows/run_cpu.bat\" ] && chmod 755 .ci/update_windows/run_cpu.bat\n",
+        "  ![ -f \".ci/update_windows/run_nvidia_gpu.bat\" ] && chmod 755 .ci/update_windows/run_nvidia_gpu.bat\n",
+        "\n",
+        "  !git pull\n",
+        "\n",
+        "!echo -= Install dependencies =-\n",
+        "!pip3 install accelerate\n",
+        "!pip3 install einops transformers>=4.28.1 safetensors>=0.4.2 aiohttp pyyaml Pillow scipy tqdm psutil tokenizers>=0.13.3\n",
+        "!pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121\n",
+        "!pip3 install torchsde\n",
+        "!pip3 install kornia>=0.7.1 spandrel soundfile sentencepiece\n",
+        "\n",
+        "if OPTIONS['USE_COMFYUI_MANAGER']:\n",
+        "  %cd custom_nodes\n",
+        "\n",
+        "  # Correction of the issue of permissions being deleted on Google Drive.\n",
+        "  ![ -f \"ComfyUI-Manager/check.sh\" ] && chmod 755 ComfyUI-Manager/check.sh\n",
+        "  ![ -f \"ComfyUI-Manager/scan.sh\" ] && chmod 755 ComfyUI-Manager/scan.sh\n",
+        "  ![ -f \"ComfyUI-Manager/node_db/dev/scan.sh\" ] && chmod 755 ComfyUI-Manager/node_db/dev/scan.sh\n",
+        "  ![ -f \"ComfyUI-Manager/scripts/install-comfyui-venv-linux.sh\" ] && chmod 755 ComfyUI-Manager/scripts/install-comfyui-venv-linux.sh\n",
+        "  ![ -f \"ComfyUI-Manager/scripts/install-comfyui-venv-win.bat\" ] && chmod 755 ComfyUI-Manager/scripts/install-comfyui-venv-win.bat\n",
+        "\n",
+        "  ![ ! -d ComfyUI-Manager ] && echo -= Initial setup ComfyUI-Manager =- && git clone https://github.com/ltdrdata/ComfyUI-Manager\n",
+        "  %cd ComfyUI-Manager\n",
+        "  !git pull\n",
+        "\n",
+        "%cd $WORKSPACE\n",
+        "\n",
+        "if OPTIONS['INSTALL_CUSTOM_NODES_DEPENDENCIES']:\n",
+        "  !echo -= Install custom nodes dependencies =-\n",
+        "  !pip install GitPython\n",
+        "  !python custom_nodes/ComfyUI-Manager/cm-cli.py restore-dependencies\n",
+        "\n",
+        "### setup  ###\n",
+        "!wget https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors -O models/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors\n",
+        "!wget https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/clip_l.safetensors -O models/text_encoders/clip_l.safetensors\n",
+        "!wget https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors -O models/text_encoders/llava_llama3_fp8_scaled.safetensors\n",
+        "!wget https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors -O models/vae/hunyuan_video_vae_bf16.safetensors\n",
+        "\n",
+        "\n",
+        "#@markdown ---\n",
+        "#@markdown ## LoRA\n",
+        "\n",
+        "#@markdown ### Pixel style hunyuan video model\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1144459/pixel-style-hunyuan-video-model?modelVersionId=1287140)\n",
+        "use_pixel_style_hunyuan_video_model = False #@param {type: \"boolean\"}\n",
+        "if use_pixel_style_hunyuan_video_model:\n",
+        "  !wget https://civitai.com/api/download/models/1287140?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### Studio Ghibli Style 🎞️ HunyuanVideo\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1084814/studio-ghibli-style-hunyuanvideo?modelVersionId=1218122)\n",
+        "use_studio_ghibli_style_hunyuan_video = False #@param {type: \"boolean\"}\n",
+        "if use_studio_ghibli_style_hunyuan_video:\n",
+        "  !wget https://civitai.com/api/download/models/1218122?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### Flat Color - Style\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1132089/flat-color-style?modelVersionId=1315010)\n",
+        "use_flat_color_style = False #@param {type: \"boolean\"}\n",
+        "if use_flat_color_style:\n",
+        "  !wget https://civitai.com/api/download/models/1315010?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### HunyuanVideo - Frost Bloom 霜华\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1068416/hunyuanvideo-frost-bloom?modelVersionId=1199182)\n",
+        "use_hunyuan_video_frost_bloom = False #@param {type: \"boolean\"}\n",
+        "if use_hunyuan_video_frost_bloom:\n",
+        "  !wget https://civitai.com/api/download/models/1199182?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### Minrill Style Animation - Hunyuan Video LoRA\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1120207/minrill-style-animation-hunyuan-video-lora?modelVersionId=1258988)\n",
+        "use_minrill_style_animation_hunyuan_video_lora = False #@param {type: \"boolean\"}\n",
+        "if use_minrill_style_animation_hunyuan_video_lora:\n",
+        "  !wget https://civitai.com/api/download/models/1258988?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### underground club\n",
+        "#@markdown [公式ページ](https://civitai.com/models/314278/underground-club?modelVersionId=1237165)\n",
+        "use_underground_club = False #@param {type: \"boolean\"}\n",
+        "if use_underground_club:\n",
+        "  !wget https://civitai.com/api/download/models/1237165?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "#@markdown ### CoolGuyExplosion\n",
+        "#@markdown [公式ページ](https://civitai.com/models/1100877/coolguyexplosion?modelVersionId=1236617)\n",
+        "use_cool_guy_explosion = False #@param {type: \"boolean\"}\n",
+        "if use_cool_guy_explosion:\n",
+        "  !wget https://civitai.com/api/download/models/1236617?token={civitai_api_key} --content-disposition --directory-prefix=/content/ComfyUI/models/loras/\n",
+        "\n",
+        "### start comfyui ###\n",
+        "!wget -P ~ https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb\n",
+        "!dpkg -i ~/cloudflared-linux-amd64.deb\n",
+        "\n",
+        "import subprocess\n",
+        "import threading\n",
+        "import time\n",
+        "import socket\n",
+        "import urllib.request\n",
+        "\n",
+        "def iframe_thread(port):\n",
+        "  while True:\n",
+        "      time.sleep(0.5)\n",
+        "      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n",
+        "      result = sock.connect_ex(('127.0.0.1', port))\n",
+        "      if result == 0:\n",
+        "        break\n",
+        "      sock.close()\n",
+        "  print(\"\\nComfyUI finished loading, trying to launch cloudflared (if it gets stuck here cloudflared is having issues)\\n\")\n",
+        "\n",
+        "  p = subprocess.Popen([\"cloudflared\", \"tunnel\", \"--url\", \"http://127.0.0.1:{}\".format(port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n",
+        "  for line in p.stderr:\n",
+        "    l = line.decode()\n",
+        "    if \"trycloudflare.com \" in l:\n",
+        "      print(\"This is the URL to access ComfyUI:\", l[l.find(\"http\"):], end='')\n",
+        "    #print(l, end='')\n",
+        "\n",
+        "\n",
+        "threading.Thread(target=iframe_thread, daemon=True, args=(8188,)).start()\n",
+        "\n",
+        "!python main.py"
+      ],
+      "metadata": {
+        "id": "_FHF4A5Axxsg"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!python main.py"
+      ],
+      "metadata": {
+        "id": "8F6APJxTDIvc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "!pip install gradio==3.38.0"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "hH6vUxOj4Xc6"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "import gradio as gr\n",
+        "   from comfyui import comfyui_api\n",
+        "   import comfyui.functions as comfyui_functions"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "CQJZ_C9X4Zif"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "import gradio as gr\n",
+        "from comfyui import comfyui_api"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "qRh0v7ZR5Iup"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "def comfyui_gradio_fn(prompt):\n",
+        "       # Your ComfyUI workflow logic here\n",
+        "       # ...\n",
+        "       return output"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "0WZMEEPs4aiP"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "iface = gr.Interface(\n",
+        "       fn=comfyui_gradio_fn,\n",
+        "       inputs=gr.Textbox(lines=2, placeholder=\"Enter your prompt\"),\n",
+        "       outputs=\"image\",\n",
+        "   )"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "X3Fcz49I4bzg"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "source": [
+        "!iface.launch(share=True)"
+      ],
+      "cell_type": "code",
+      "metadata": {
+        "id": "ZUtwCKlZ4dBI"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import output\n",
+        "output.enable_custom_widget_manager()"
+      ],
+      "metadata": {
+        "id": "wBhEtEyZFQ6v"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Support for third party widgets will remain active for the duration of the session. To disable support:"
+      ],
+      "metadata": {
+        "id": "09KIdZmmFQ6w"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import output\n",
+        "output.disable_custom_widget_manager()"
+      ],
+      "metadata": {
+        "id": "bJeTrbMuFQ6x"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
